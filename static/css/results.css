@@ -1,0 +1,37 @@
+body{
+background-color: #ffcccc;
+}
+table, th, td {
+  border: 1px solid black;
+}
+th{
+	font-size: 30px;
+}
+#button{
+border: none;
+outline: none;
+height: 30px;
+background: #fb2525;
+color: #fff;
+font-size: 10px;
+border-radius: 15 px;
+}
+#button: hover{
+cursor: pointer;
+background: #ffc107;
+color: #000;
+}
+#hp{
+border: none;
+outline: none;
+height: 6px;
+background: #fb2525;
+color: #fff;
+font-size: 2px;
+border-radius: 3 px;
+}
+#hp: hover{
+cursor: pointer;
+background: #ffc107;
+color: #000;
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Recommendation System</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/homepage.css') }}"/>
+</head>
+<body>
+<header>
+<div class="main">
+<ul>
+	<li><a href="#">HOME</a></li>
+	<li><a href="#">ABOUT</a></li>
+	<li><a href="#">CONTACT</a></li>
+</ul>
+</div>
+<div class="form-box" action="/search" method="POST">
+	<form id="searched"  action="/search" method="POST">
+		<input type="search" name="search" placeholder="   Search Research Papers" id="search">
+		<input type="submit" name="searched" value="SEARCH" id="button">
+	</form>
+	<!--</form> -->
+</div>
+</header>
+</body>
+</html>

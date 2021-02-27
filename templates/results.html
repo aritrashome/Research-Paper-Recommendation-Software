@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Search Results for {{ query }}</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/results.css') }}"/>
+</head>
+{% block body %}
+<div class="content">
+    <h1 style="text-align: center">Search Results for "{{ query }}"</h1>
+    
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Body</th>
+            <th>Link</th>
+        </tr>
+        {% for result in results %}
+            <tr>
+                <td>{{ result[0] }}</td>
+                <td>{{ result[1] }}</td>
+                <td>
+                	<form id="read" class="" action="/read/{{result[3]}}" method="POST">
+						<input type="submit" name="search" value="Read More" id="button">
+					</form>
+                    <!--<a href= {{result[2]}}>Read More</a>-->
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+<form id="back" class="" action="/back" method="POST">
+	<button type="submit" class="submit-btn" action="/back" method="POST">Back To HomePage</button>
+</form>
+{% endblock %}
+</html>
