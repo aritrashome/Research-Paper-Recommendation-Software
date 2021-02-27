@@ -1,7 +1,7 @@
 # Research-Paper-Recommendation-System
 Building a Recommendation System for research papers.
-Using Deep Learning concepts like Word2vec and other NLP concepts and algorithms.
+Used LDA model to classify papers into topics. Extracted various features from text Data and used MCDA Technique to recommend best papers.
 
-new_word2vec.ipynb -> Contains LDA + Word2vec approach for topic modelling of different Research Papers.
-
-LSTM-Topic.ipynb -> Contains LSTM model to predict which topic's research paper will our user want to read next.
+Scraped Data from Google Scholar to create Database.
+Used SQL Lite as Database.
+Made the web application of the Reccomender system using Flask.
