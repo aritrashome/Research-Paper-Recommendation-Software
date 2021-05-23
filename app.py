@@ -1,11 +1,21 @@
+## This is the Code For Research Paper Recommendation Software's main file; This file contains the code for 
+## FLask application used for the Softwares web application.
+import subprocess
+#subprocess.run('pip install -r requirements.txt',shell=False,stdout=subprocess.DEVNULL,)
+
 from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import cgi, csv
 import pandas as pd
+from tensorflow import keras
+import mysql.connector
+database = 'rsproject'
 
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 query = ""
 results = []
@@ -46,20 +56,22 @@ def register():
 	id = request.form["UserID"]
 	email = request.form['Email']
 	password = request.form['Password']
-	user = User.query.filter_by(UserID='aitra').first()
-	if(user!=None):
+	db = mysql.connector.connect(
+	  host="localhost",
+	  user="root",
+	  password="",
+	  database=database
+	)
+	cursor = db.cursor()
+	sql = ("SELECT * FROM users WHERE UserID='"+str(id)+"'")
+	cursor.execute(sql)
+	res = cursor.fetchall()
+	if(len(res)!=0):
 		return "Username Already Used"
-	new_user = User(UserID=id,email=email,password=password)
-	db.session.add(new_user)
-	db.session.commit()
-	#csv_file = csv.reader(open('User_Details.csv', "r"), delimiter=",")
-	'''
-	for row in csv_file:
-		if id == row[0]:
-			print("Username already taken")
-			return render_template('rs.html', )
-	with open('User_Details.csv','a') as fd:
-		fd.write(str(id)+','+str(email)+','+str(password)+'\n')'''
+	insert = ("INSERT INTO `users` (`id`, `UserID`, `email`, `password`) VALUES (NULL, '"+id+"', '"+email+"', '"+password+"');")
+	cursor.execute(insert)
+	db.commit()
+	cursor.close()
 
 	return render_template('rs.html', )
 
@@ -68,10 +80,21 @@ def register():
 def login():
 	id = request.form['UserID']
 	password = request.form['Password']
-	user = User.query.filter_by(UserID=id).first()
-	if(user==None):
+	db = mysql.connector.connect(
+	  host="localhost",
+	  user="root",
+	  password="",
+	  database=database
+	)
+	cursor = db.cursor()
+	sql = ("SELECT * FROM users WHERE UserID='"+str(id)+"'")
+	cursor.execute(sql)
+	res = cursor.fetchall()
+	cursor.close()
+
+	if(len(res)==0):
 		return "Invalide User ID"
-	if(user.password != password):
+	if(res[0][3]!=password):
 		return "Incorrect Password"
 	global userid 
 	userid = id
@@ -85,13 +108,24 @@ def search():
 	global results
 	query = request.form['search']
 
-	#print(query)
 	import subprocess
-	#subprocess.run('cd main')
 	subprocess.run('cd main && python web_crawl.py '+query.replace(" ", "")+' && cd..',shell=True)
-	#subprocess.run('cd..')
 	
-	papers = Papers.query.filter_by(UserID=userid).all()
+	
+
+	################ORIGINAL#############
+	db = mysql.connector.connect(
+	  host="localhost",
+	  user="root",
+	  password="",
+	  database=database
+	)
+	cursor = db.cursor()
+	sql = ("SELECT * FROM papers WHERE UserID='"+str(userid)+"'")
+	cursor.execute(sql)
+	papers = cursor.fetchall()
+	cursor.close()
+
 	df = pd.read_csv('main/data.csv')
 	if len(papers)<15:
 		rank = mcda(df)
@@ -104,7 +138,7 @@ def search():
 	else:
 		print('LSTM\nLSTM\nLSTM')
 		topic = lstm(papers)
-		rank = rankaggr_brute(df)
+		rank = mcda(df)
 		results.clear()
 		for i in range(len(rank)):
 			if df['Topic'][rank[i]]==topic[0] or df['Topic'][rank[i]]==topic[1]:
@@ -115,30 +149,9 @@ def search():
 				result = [df['Source title'][rank[i]], df['Abstract'][rank[i]], df['Link'][rank[i]],rank[i]]
 				results.append(result)
 		return render_template('results.html', results=results,query=query)
-		'''
-		df1 = df[(df['Topic']==topic[0]) | (df['Topic']==topic[1])]
-		df2 = df[(df['Topic']!=topic[0]) & (df['Topic']!=topic[1])]
-		rank1 = mcda(df1)
-		print('Len Rank1 = ',len(rank1))
-		results.clear()
-		results = []
-		for i in range(min(len(rank1),10)):
-			result = [df1['Source title'][rank1[i]], df1['Abstract'][rank1[i]], df1['Link'][rank1[i]],rank1[i]]
-			results.append(result)
-		if len(results)>=10: return render_template('results.html', results=results,query=query)
-		rank2 = mcda(df2)
-		print('Len Rank2 = ',len(rank2))
-		for i in range(10-len(rank1)):
-			result = [df2['Source title'][rank2[i]], df2['Abstract'][rank2[i]], df2['Link'][rank2[i]],rank2[i]]
-			results.append(result)
-		return render_template('results.html', results=results,query=query)'''
 
-	'''
-	csv_file = csv.reader(open('data.csv', "r"), delimiter=",")
-	next(csv_file)
-	for row in csv_file:
-		result = [row[2],row[4],row[1]]
-		results.append(result)'''
+
+
 
 @app.route('/read/<string:num>' , methods=['POST', 'GET'])
 def read(num):
@@ -147,15 +160,31 @@ def read(num):
 	df = pd.read_csv('main/data.csv')
 	i = int(num)
 	webbrowser.open_new_tab(df['Link'][i])
-	new_paper = Papers(title =df['Source title'][i] ,UserID=userid,KDM=df['KDM'][i], CAOT=df['CAOT'][i],
-		SQM=df['SQM'][i],SCA=df['SCA'][i],topic=df['Topic'][i])
+	title =df['Source title'][i] 
+	UserID=userid
+	KDM=df['KDM'][i] 
+	CAOT=df['CAOT'][i]
+	SQM=df['SQM'][i]
+	SCA=df['SCA'][i]
+	topic=df['Topic'][i]
+
+	db = mysql.connector.connect(
+	  host="localhost",
+	  user="root",
+	  password="",
+	  database=database
+	)
+	cursor = db.cursor()
+	sql = ("INSERT INTO `papers` (`id`, `title`, `UserID`, `KDM`, `CAOT`, `SQM`, `SCA`, `topic`, `time`) VALUES (NULL, '"+title+"','"+UserID+"', '"+str(KDM)+"','"+str(CAOT)+"','"+str(SQM)+"','"+str(SCA)+"','"+str(topic)+"', current_timestamp());")
+	
 	
 	try:
-		db.session.add(new_paper)
-		db.session.commit()
+		cursor.execute(sql)
+		db.commit()
 		print("Paper added")
 	except:
 		print("Error")
+	cursor.close()
 	return render_template('results.html', results=results,query=query)
 
 @app.route('/back' , methods=['POST', 'GET'])
@@ -165,6 +194,8 @@ def back():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+	from waitress import serve
+	serve(app, host="0.0.0.0", port=8080)
+	#app.run(debug=True)
 
 

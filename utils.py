@@ -65,8 +65,9 @@ def lstm(papers):
 	for i in range(len(papers)-inputs):
 	    Xi = []
 	    for j in range(inputs):
-	        X = [papers[i+j].KDM, papers[i+j].SCA, papers[i+j].SQM, papers[i+j].CAOT,0,0,0,0,0]
-	        n = papers[i+j].topic
+	        X = [papers[i+j][3], papers[i+j][6], papers[i+j][5], papers[i+j][4],0,0,0,0,0]
+	        #X = [papers[i+j].KDM, papers[i+j].SCA, papers[i+j].SQM, papers[i+j].CAOT,0,0,0,0,0] ##############
+	        n = papers[i+j][7] ###########################
 	        try:
 	            X[3+n] = 1
 	        except:
@@ -76,9 +77,9 @@ def lstm(papers):
 	for i in range(inputs,len(papers)):
 	    Yi = [0,0,0,0,0]
 	    try:
-	        Yi[papers[i].topic - 1] = 1
+	        Yi[papers[i][7] - 1] = 1 ###############
 	    except:
-	        Yi[int.from_bytes(papers[i].topic,"little" ) - 1] = 1
+	        Yi[int.from_bytes(papers[i][7],"little" ) - 1] = 1 ####################
 	    Yin.append(Yi)
 
 	Yin = np.array(Yin)
