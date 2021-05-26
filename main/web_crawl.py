@@ -44,7 +44,11 @@ print(query)
 urls = ["https://scholar.google.com/scholar?start=0&q="+str(query)+"&hl=en&as_sdt=0,5","https://scholar.google.com/scholar?start=10&q="+str(query)+"&hl=en&as_sdt=0,5","https://scholar.google.com/scholar?start=20&q="+str(query)+"&hl=en&as_sdt=0,5"]
 
 data = []
+author = []
+count = 0
 for url in urls:
+    if count>=3:
+        break
     try:
         page = requests.get(url)
     except: 
@@ -52,6 +56,8 @@ for url in urls:
     soup = BeautifulSoup(page.content, 'html.parser')
 
     for item in soup.select('[data-did]'):
+        if count>=3:
+            break
         paper = []  #1.Pdf link  2.title  3.Keywords(10) 4.body
         try:
             #print(str(item.select('div.gs_ggsd')[0].select('a')[0]['href']))  #Pdf link
@@ -92,8 +98,13 @@ for url in urls:
         except:
             paper.append(text)
         data.append(paper)
+        count = count + 1
         #print(item.select('.gs_rs')[0].get_text())   #Abstract
         #print(item.select('.gs_a')[0].get_text())   #Green text
+        try:
+            author.append("https://scholar.google.com/" + str(item.select('div.gs_a')[0].select('a')[0]['href']))
+        except:
+            author.append("")
         print('----------------------------')
 
 
@@ -147,210 +158,6 @@ import datetime
 from selenium.webdriver.firefox.options import Options
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
-#get_ipython().magic('matplotlib inline')
-
-
-# In[3]:
-
-#The name of the csv file to be opened
-#readDataFileLoc = "scopus_2000_Citation.csv"
-
-
-# In[4]:
-
-#Reading the csv file and doing the required preprocessing
-#It takes only the required columns - Authors, Title, Year, Cited by
-#Removing the rows i.e. papers whose citations are 0
-citationDataset = pd.read_csv("data.csv",)
-#citationDataset=citationDataset1.iloc[:10,:]
-citationDataset.head()
-#newCitationDataset = citationDataset[['Authors', 'Title', 'Year', 'Cited by']]
-#print(newCitationDataset.head())
-#finalCitationDataset = newCitationDataset[pd.notnull(newCitationDataset['Cited by'])]
-#listCitationData = finalCitationDataset.values
-#print(len(listCitationData))
-#print(finalCitationDataset)
-
-
-# In[9]:
-
-def getScholarSearchResult(browser, queryToSearch):
-    """
-    To type the query in the google scholar search bar and search it
-
-    Args:
-        browser: An open browser using selenium(preferably firefox)
-        queryToSearch: A string which has to be searched in the google scholar
-
-    Returns:
-        browser(no need actually)
-    """
-    scholarSearchBar = browser.find_element_by_name("q")
-    scholarSearchBar.send_keys(queryToSearch)
-    scholarSearchBar.submit()
-    return browser
-
-def searchScholarResults(browser, queryToSearch):
-    """
-    To type the query in the google scholar search bar and search it
-
-    Args:
-        browser: An open browser using selenium(preferably firefox)
-        queryToSearch: A string which has to be searched in the google scholar
-
-    Returns:
-        Nothing
-    """
-    scholarSearchBar = browser.find_element_by_name("q")
-    scholarSearchBar.send_keys(queryToSearch)
-    scholarSearchBar.submit()
-    return
-
-def customSimilarityChecker(listpapers, paperTitle):
-    """
-    A basic similarity checker which compares all the Names of paper displayed by the Scholar with the desired paper and clicks the link of the paper
-
-    Args:
-        listpapers: HTML listofpapers which contain the Title of the papers
-        paperTitle: Title of the paper which we are searching
-
-    Returns:
-        Nothing
-    """
-    index = 0
-    maxDiff = SequenceMatcher(None, listpapers[0].text, paperTitle).ratio()
-    #print(maxDiff)
-    for x in range(0, len(listpapers)):
-        temp = SequenceMatcher(None, listpapers[x].text, paperTitle).ratio()
-        if temp > maxDiff:
-            index = x
-            maxDiff = temp
-    listpapers[index].click()
-    return
-
-def getYearCitationInformation(browser):
-    """
-    Calling this function will return an 1-d array containing pairs of year and citations in that year of the paper
-    Takes the open page of the paper in Google Scholar as input
-
-    Args:
-        browser: An open browser using selenium(preferably firefox)
-
-    Returns:
-        A 1-d array containing pairs of year and citations in that year of the paper
-    """
-    answer = []
-    try:
-        idBars = browser.find_element_by_id('gsc_vcd_graph_bars')
-    except Exception:
-        return answer
-    barsList = idBars.find_elements_by_tag_name('a')
-    lengthBars = len(barsList)
-    listOfBarsYear = idBars.find_elements_by_class_name('gsc_vcd_g_t')
-    for i in range(0, lengthBars):
-        answer.append([(barsList[lengthBars - i - 1].find_elements_by_tag_name('span'))[0].get_attribute('textContent'),
-                       listOfBarsYear[lengthBars - i - 1].text])
-    
-    return answer
-
-#This function will click the more button repeteadly to display all the research papers published by a person on the page
-def correctClickMoreButton(browser):
-    """
-
-    Args:
-        browser: 
-
-    :return:
-    """
-    return
-
-def searchChooseCitationInfo(browser, queryToSearch, paperTitle):
-    """
-    Calling this function will return an 1-d array containing pairs of year and citations in that year of the paper,
-     taking only an open browser as input
-    :param browser: An open browser using selenium(preferably firefox)
-    :param queryToSearch: The text query which we are going to search in the google scholar
-    :param paperTitle: Title of the paper which we are searching
-    :return: A 1-d array containing pairs of year and citations in that year of the paper
-    """
-    browser.get("https://scholar.google.com/")
-    scholarSearchBar = browser.find_element_by_name("q")
-    scholarSearchBar.send_keys(queryToSearch)
-    scholarSearchBar.submit()
-    #tempList = browser.find_elements_by_class_name("gs_a")
-    #tempList2 = tempList[0].find_elements_by_tag_name('a')
-    #tempList2[0].click()
-    time.sleep(5)
-    ((browser.find_elements_by_class_name("gs_a"))[0].find_elements_by_tag_name('a'))[0].click()
-    time.sleep(5)
-    correctClickMoreButton(browser)
-    listpapers = browser.find_elements_by_class_name('gsc_a_at')
-    customSimilarityChecker(listpapers, paperTitle)
-    time.sleep(5)
-    return getYearCitationInformation(browser)
-
-
-
-
-def writeListCitationToCsv(fileName, answer, listCitationData, score):
-    """
-    Writes the citation data to the csv file
-
-    Args:
-        fileName: name of the file to which data has to be written
-        answer: citation data for each paper with respect to time
-        listCitationData: consist of related data of each paper
-        score: score for each paper
-
-    Returns:
-        Nothing
-    """
-    max = 0
-    now = datetime.datetime.now()
-    start = int(now.year)
-    i = 0
-    for i in range(0, len(answer)):
-        if len(answer[i]) > 0:
-            t = start - int(answer[i][0][1]) + len(answer[i])
-        else:
-            t = len(answer[i])
-        if t > max:
-            max = t
-    f = open(fileName, 'w+')
-    csvout = csv.writer(f)
-    row = []
-    row.extend(['Authors', 'Title', 'Year',
-                'Cited by', 'Cited by updated', 'Last Citation Year', 'Score'])
-    rowInitData = len(row)
-    for i in range(0, max):
-        row.extend([start - i])
-    end = start - max + 1
-    csvout.writerow(row)
-    for i in range(0, len(answer)):
-        row = []
-        sum = 0
-        for m in range(0, len(answer[i])):
-            sum = sum + int(answer[i][m][0])
-        if len(answer[i]) > 0:
-            row.extend([listCitationData[i][0], listCitationData[i][1], listCitationData[i][2]
-                           , listCitationData[i][3], sum, answer[i][len(answer[i]) - 1][1], score[i]])
-        else:
-            row.extend([listCitationData[i][0], listCitationData[i][1], listCitationData[i][2]
-                           , listCitationData[i][3], 0, -1, score[i]])
-        j = 0
-        k = start
-        while ((j < len(answer[i])) and (k >= end)):
-            if (int(answer[i][j][1]) == k):
-                row.extend([answer[i][j][0]])
-                j = j + 1
-            else:
-                row.extend([0])
-            k = k - 1
-        incompIter = max - len(row) + rowInitData
-        for l in range(0, incompIter):
-            row.extend([0])
-        csvout.writerow(row)
-    return
 
 
 # In[6]:
@@ -360,24 +167,29 @@ def writeListCitationToCsv(fileName, answer, listCitationData, score):
 #opts = webdriver.chrome.options.Options()
 #opts.set_headless()
 #assert opts.headless
-browser = webdriver.Chrome("chromedriver.exe")
-#browser = webdriver.Chrome(options=opts)
-browser.get("https://scholar.google.com/")
+
 
 # In[7]:
 
 #Collect the data
 answer = []
-for i in range(0, len(df)):
-    paperTitle = df["Source title"][i]
-    
+for i in range(0, len(author)):
     #paperAuthor = listCitationData[i][0]
-    try:
-        answer.append(searchChooseCitationInfo(browser, paperTitle , paperTitle))
-    except Exception:
+    print('Author '+str(i))
+    if(len(author[i])<10):
         answer.append([])
+    else:
+        url = author[i]
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        tmp = []
+        year = 2021
+        for span in soup.select('span.gsc_g_al'):
+            tmp.append([span.text, str(year)])
+            year = year-1
+        answer.append(tmp)
+
     #print(i)
-browser.quit()
 #print(len(answer))
 
 
@@ -433,6 +245,7 @@ def SQM(answer):
     for i in range(len(df)):
         sqm = 0
         if len(answer[i]):
+
             for j in range(len(answer[i])-1):
                 slope = int(answer[i][j][0]) - int(answer[i][j+1][0])
                 amp = abs(slope)
