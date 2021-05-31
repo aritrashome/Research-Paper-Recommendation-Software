@@ -1,4 +1,4 @@
-# Research-Paper-Recommendation-System
+# Research-Paper-Recommendation-Software
 Building a Recommendation System for research papers.
 Used <b>LDA</b> model to classify papers into topics and <b>LSTM</b> to predict future Topics. Extracted various features from text Data and used MCDA Technique to recommend best papers.<br>
 
